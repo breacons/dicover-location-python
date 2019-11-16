@@ -25,7 +25,9 @@ for time in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):
 
         parsed = []
 
-        for line in json.load(response) :
+        print(response)
+
+        for line in json.load([response]):
             if line["notifications"][0]['geoCoordinate']["longitude"] > 0:
                 parsed.append({
                     "deviceId": line["notifications"][0]['deviceId'],

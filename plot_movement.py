@@ -18,7 +18,8 @@ sns.set_palette("bright")
 sns.set(rc={'figure.figsize': (11.7, 8.27)})
 
 file_name = 'notify.json.2019-11-10-18-05'
-live_data = 'merged.json'
+# live_data = 'merged.json'
+live_data = False
 row_count = 500
 meeting_threshold = 5
 load_timeslots = False
@@ -58,7 +59,6 @@ else:
                         "longitude": line["notifications"][0]['geoCoordinate']["longitude"],
                         "timestamp": line["notifications"][0]["timestamp"],
                     })
-
 
     df = pd.DataFrame(counter)
     print(df)
