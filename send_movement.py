@@ -12,9 +12,15 @@ import operator
 import itertools
 import collections
 
+from flask_cors import CORS, cross_origin
+
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins='*', path='/socket.io')
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 file_name = 'notify.json.2019-11-10-18-05'
 # live_data = 'merged.json'
@@ -31,8 +37,17 @@ def roundTime(dt=None, roundTo=60):
     rounding = (seconds + roundTo / 2) // roundTo * roundTo
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
+@socketio.on('message')
+def handle_message(message):
+    print('received message: ' + message)
+
+@socketio.on('connect')
+def test_connect():
+    print('Client connected')
+
 
 @app.route('/load')
+@cross_origin()
 def main():
     round = 0
     timeslots = {}
@@ -104,10 +119,10 @@ def main():
                 data["teams"] = get_top_teams()
                 data["leaderboard"] = get_leaderboard()
 
-            print('{0} - sending: {1}'.format(datetime.now(), json.dumps(data)))
+                print('{0} - sending: {1}'.format(datetime.now(), json.dumps(data)))
 
             if data != {}:
-                socketio.emit('FromAPI', {"data": data})
+                socketio.emit('FromAPI', {'data': data})
 
             round += 1
 
@@ -135,6 +150,6 @@ def main():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', debug=False)
+    socketio.run(app, host='0.0.0.0', debug=True)
     print('after')
     main()
