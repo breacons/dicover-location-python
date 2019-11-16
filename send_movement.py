@@ -104,7 +104,10 @@ def main():
             current_time_key = time_key
 
         if deviceId not in current_timeslot:
-            current_timeslot[deviceId] = {}
+            current_timeslot[deviceId] = {
+                "score": score,
+                "team": team
+            }
 
         for key, player in current_timeslot.items():
             if key != deviceId:
@@ -121,8 +124,6 @@ def main():
 
         current_timeslot[deviceId]["latitude"] = latitude
         current_timeslot[deviceId]["longitude"] = longitude
-        current_timeslot[deviceId]["team"] = team
-        current_timeslot[deviceId]["score"] = score
 
 
 if __name__ == '__main__':
