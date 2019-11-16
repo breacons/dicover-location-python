@@ -18,9 +18,10 @@ sns.set_palette("bright")
 sns.set(rc={'figure.figsize': (11.7, 8.27)})
 
 file_name = 'notify.json.2019-11-10-18-05'
+live_data = 'merged.json'
 row_count = 500
 meeting_threshold = 5
-load_timeslots = 'notify.json.2019-11-10-18-05-500-1573888549.985203.pickle'
+load_timeslots = False
 
 maxLongitude = 24.826288783593107
 minLongitude = 24.82266643082625
@@ -41,20 +42,26 @@ if load_timeslots:
     with open('processed/{0}'.format(load_timeslots), 'rb') as handle:
         timeslots = pickle.load(handle)
 else:
-    counter = []
-    with open("data/{0}".format(file_name)) as datafile:
-        data = json.load(datafile)
+    if live_data:
+        with open("live-data/{0}".format(live_data)) as datafile:
+            counter = json.load(datafile)
+    else:
+        counter = []
+        with open("data/{0}".format(file_name)) as datafile:
+            data = json.load(datafile)
 
-        for line in data:
-            if line["notifications"][0]['geoCoordinate']["longitude"] > 0:
-                counter.append({
-                    "deviceId": line["notifications"][0]['deviceId'],
-                    "latitude": line["notifications"][0]['geoCoordinate']["latitude"],
-                    "longitude": line["notifications"][0]['geoCoordinate']["longitude"],
-                    "timestamp": line["notifications"][0]["timestamp"],
-                })
+            for line in data:
+                if line["notifications"][0]['geoCoordinate']["longitude"] > 0:
+                    counter.append({
+                        "deviceId": line["notifications"][0]['deviceId'],
+                        "latitude": line["notifications"][0]['geoCoordinate']["latitude"],
+                        "longitude": line["notifications"][0]['geoCoordinate']["longitude"],
+                        "timestamp": line["notifications"][0]["timestamp"],
+                    })
+
 
     df = pd.DataFrame(counter)
+    print(df)
     # maxLongitude = df['longitude'].max()
     # minLongitude = df['longitude'].min()
     # maxLatitude = df['latitude'].max()
