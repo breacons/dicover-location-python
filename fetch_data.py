@@ -4,6 +4,7 @@ from dateutil import rrule
 import json
 import os.path
 
+
 url = 'http://13.48.149.61:8000/data/notify.json.{0}'
 start = datetime.datetime.strptime('2019-11-16-00-27', '%Y-%m-%d-%H-%M').date()
 end = datetime.datetime.strptime('2019-11-18-10-00', '%Y-%m-%d-%H-%M').date()
@@ -13,9 +14,23 @@ for time in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):
         continue
 
     try:
+        urlData = url.format(time.strftime('%Y-%m-%d-%H-%M'))
+        print(urlData)
+        webURL = urllib.request.urlopen(urlData)
+        data = webURL.read()
+        encoding = webURL.info().get_content_charset('utf-8')
+        content = data.decode(encoding)
+
+        content = content.replace('[[', '[')
+        content = content.replace('"tagVendorData": null}]}]', '"tagVendorData": null}]},')
+
+        print(content)
+        print(json.loads(content))
+
+        continue
+
         print(url.format(time.strftime('%Y-%m-%d-%H-%M')))
         response = urllib.request.urlopen(url.format(time.strftime('%Y-%m-%d-%H-%M')))
-        print(response.status)
 
         if response.status == 'HTTP Error 404: Not Found':
             continue
@@ -27,7 +42,7 @@ for time in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):
 
         print(response)
 
-        for line in json.load([response]):
+        for line in json.load(response):
             if line["notifications"][0]['geoCoordinate']["longitude"] > 0:
                 parsed.append({
                     "deviceId": line["notifications"][0]['deviceId'],

@@ -18,10 +18,10 @@ sns.set_palette("bright")
 sns.set(rc={'figure.figsize': (11.7, 8.27)})
 
 file_name = 'notify.json.2019-11-10-18-05'
-# live_data = 'merged.json'
-live_data = False
-row_count = 500
-meeting_threshold = 5
+live_data = 'merged.json'
+# live_data = False
+row_count = 1000
+meeting_threshold = 3
 load_timeslots = False
 
 maxLongitude = 24.826288783593107
@@ -76,7 +76,7 @@ else:
     df = df.head(row_count)
 
     # Find devices with the most data
-    # print(df['deviceId'].value_counts())
+    print(df['deviceId'].value_counts())
 
     # Plot all data points
     # df.plot.scatter(x='longitude', y='latitude', c='DarkBlue')
@@ -207,6 +207,6 @@ def animate(i):
     return scat
 
 
-anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(timeslots), interval=50, )
+anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(timeslots), interval=500, )
 
 plt.show()
