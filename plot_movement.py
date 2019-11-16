@@ -129,9 +129,13 @@ else:
             timeslots[time_key][deviceId] = {}
 
         for key, player in timeslots[time_key].items():
+            # deviceId belongs to the currently moved user
+            # key belongs to another user who is on the network at the same time
             if key != deviceId:
+                # we calculate the distance between the two user
                 distance = geopy.distance.distance((latitude, longitude), (player["latitude"], player["longitude"])).m
 
+                # if they are close and not in the same team then the interaction happens
                 if distance < meeting_threshold and player["team"] != team:
                     # print('At {0}, {1} met with {2}'.format(time_key, deviceId, key))
                     if player["score"] > score:

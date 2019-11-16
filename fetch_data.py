@@ -5,11 +5,6 @@ import json
 import os.path
 
 url = 'http://13.48.149.61:8000/data/notify.json.{0}'
-response = urllib.request.urlopen(url.format('2019-11-16-00-27'))
-data = response.read()  # a `bytes` object
-text = data.decode('utf-8')  # a `str`; this step can't be used if data is binary
-print(text)
-
 start = datetime.datetime.strptime('2019-11-16-00-27', '%Y-%m-%d-%H-%M').date()
 end = datetime.datetime.strptime('2019-11-18-10-00', '%Y-%m-%d-%H-%M').date()
 
