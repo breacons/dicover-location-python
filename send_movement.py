@@ -23,8 +23,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 file_name = 'notify.json.2019-11-10-18-05'
-# live_data = 'merged.json'
-live_data = False
+live_data = 'merged.json'
+# live_data = False
 row_count = 50000
 meeting_threshold = 5
 load_timeslots = False
@@ -89,7 +89,6 @@ def main():
     def get_leaderboard():
         current_players = {key: player["score"] for key, player in current_timeslot.items()}
         return dict(itertools.islice(collections.OrderedDict(Counter(current_players)).items(), 0, 5))
-
 
     current_time_key = None
     for index, row in df.iterrows():
