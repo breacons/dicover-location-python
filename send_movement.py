@@ -119,7 +119,7 @@ def main():
                 data["teams"] = get_top_teams()
                 data["leaderboard"] = get_leaderboard()
 
-                print('{0} - sending: {1}'.format(datetime.now(), json.dumps(data)))
+            print('{0} - sending: {1}'.format(datetime.now(), json.dumps(data)))
 
             if data != {}:
                 socketio.emit('FromAPI', {'data': data})
