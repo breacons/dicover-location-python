@@ -90,7 +90,6 @@ def main():
         current_players = {key: player["score"] for key, player in current_timeslot.items()}
         return dict(itertools.islice(collections.OrderedDict(Counter(current_players)).items(), 0, 5))
 
-
     current_time_key = None
     for index, row in df.iterrows():
         deviceId = row['deviceId']
