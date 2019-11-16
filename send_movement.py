@@ -23,8 +23,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 file_name = 'notify.json.2019-11-10-18-05'
-# live_data = 'merged.json'
-live_data = False
+live_data = 'merged.json'
+# live_data = False
 row_count = 50000
 meeting_threshold = 5
 load_timeslots = False
