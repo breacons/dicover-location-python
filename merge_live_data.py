@@ -10,8 +10,6 @@ def live():
             with open('{0}/{1}'.format(directory, filename)) as f:
                 data = json.load(f)
                 contents += data
-
-
     with open('live-data/merged.json', 'w', encoding='utf-8') as f:
         json.dump(contents, f, ensure_ascii=False, indent=4)
 
