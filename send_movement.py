@@ -119,13 +119,6 @@ def main():
                     elif current_timeslot[deviceId]["score"] < current_timeslot[key]["score"]:
                         current_timeslot[deviceId]["team"] = current_timeslot[key]["team"]
 
-                    if player["score"] > score:
-                        player["score"] += (score + 10)
-                        current_timeslot[deviceId]["team"] = player["team"]
-                    else:
-                        score += (player["score"] + 10)
-                        player["team"] = team
-
         current_timeslot[deviceId]["latitude"] = latitude
         current_timeslot[deviceId]["longitude"] = longitude
         current_timeslot[deviceId]["team"] = team
