@@ -14,20 +14,13 @@ import collections
 
 from flask_cors import CORS, cross_origin
 
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*', path='/socket.io')
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-
-file_name = 'notify.json.2019-11-10-18-05'
-live_data = 'merged.json'
-# live_data = False
-row_count = 50000
 meeting_threshold = 5
-load_timeslots = False
 
 
 # Rounding time to roundTo seconds
@@ -50,26 +43,10 @@ def test_connect():
 @cross_origin()
 def main():
     round = 0
-    timeslots = {}
     current_timeslot = {}
 
-
-    if live_data:
-        with open("live-data/{0}".format(live_data)) as datafile:
-            counter = json.load(datafile)
-    else:
-        counter = []
-    with open("data/{0}".format(file_name)) as datafile:
-        data = json.load(datafile)
-
-        for line in data:
-            if line["notifications"][0]['geoCoordinate']["longitude"] > 0:
-                counter.append({
-                    "deviceId": line["notifications"][0]['deviceId'],
-                    "latitude": line["notifications"][0]['geoCoordinate']["latitude"],
-                    "longitude": line["notifications"][0]['geoCoordinate']["longitude"],
-                    "timestamp": line["notifications"][0]["timestamp"],
-                })
+    with open("notify/merged.json") as datafile:
+        counter = json.load(datafile)
 
     df = pd.DataFrame(counter)
     print(df)
@@ -78,7 +55,6 @@ def main():
     df = df.sort_values('timestamp')
 
     players = {}
-
     def random_color():
         return len(players)
 
@@ -135,6 +111,14 @@ def main():
                 distance = geopy.distance.distance((latitude, longitude), (player["latitude"], player["longitude"])).m
 
                 if distance < meeting_threshold and player["team"] != team:
+                    current_timeslot[deviceId]["score"] += 1
+                    current_timeslot[key]["score"] += 1
+
+                    if current_timeslot[deviceId]["score"] > current_timeslot[key]["score"]:
+                        current_timeslot[key]["team"] = current_timeslot[deviceId]["team"]
+                    elif current_timeslot[deviceId]["score"] < current_timeslot[key]["score"]:
+                        current_timeslot[deviceId]["team"] = current_timeslot[key]["team"]
+
                     if player["score"] > score:
                         player["score"] += (score + 10)
                         current_timeslot[deviceId]["team"] = player["team"]
