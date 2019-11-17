@@ -51,7 +51,7 @@ def main():
         buffer = 0
         current_timeslot = {}
 
-        with open("notify/merged.json") as datafile:
+        with open("../notify/merged.json") as datafile:
             counter = json.load(datafile)
 
         df = pd.DataFrame(counter)
@@ -59,6 +59,23 @@ def main():
 
         df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
         df = df.sort_values('timestamp')
+
+        print('All devices')
+        print(pd.Series(df["deviceId"].value_counts()))
+        device_ids = df.groupby(by='deviceId').count().sort_values('timestamp', ascending=False)
+
+
+        # ezt írtam bele, nézd meg hogy jobb lett e, hanem akkor töröld
+        print('Moving devices')
+        moving_devices = device_ids[device_ids.timestamp > 400].index
+        print(moving_devices)
+
+        # df = df[(df.deviceId in moving_devices)]
+        df = df[df['deviceId'].isin(moving_devices)]
+        print('filtered')
+        print(df)
+
+        # eddig
 
         players = {}
 
@@ -113,8 +130,8 @@ def main():
 
 
             time_key = roundTime(timestamp, roundTo=1)
+            time_key = timestamp
             emit_update()
-
             if not current_time_key or time_key > current_time_key:
                 # emit_update()
                 round += 1
