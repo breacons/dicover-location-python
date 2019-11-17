@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response
+from flask import Flask, jsonify, make_response, send_from_directory, send_file
 from flask_socketio import SocketIO, emit
 import copy
 from datetime import datetime, timedelta
@@ -11,6 +11,7 @@ import pickle
 import operator
 import itertools
 import collections
+import random
 
 from flask_cors import CORS, cross_origin
 
@@ -21,7 +22,7 @@ cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 meeting_threshold = 5
-
+running = False
 
 # Rounding time to roundTo seconds
 def roundTime(dt=None, roundTo=60):
@@ -39,91 +40,110 @@ def test_connect():
     print('Client connected')
 
 
+
 @app.route('/load')
 @cross_origin()
 def main():
-    round = 0
-    current_timeslot = {}
+    global running
+    if running == False:
+        running = True
+        round = 0
+        buffer = 0
+        current_timeslot = {}
 
-    with open("notify/merged.json") as datafile:
-        counter = json.load(datafile)
+        with open("notify/merged.json") as datafile:
+            counter = json.load(datafile)
 
-    df = pd.DataFrame(counter)
-    print(df)
+        df = pd.DataFrame(counter)
+        print(df)
 
-    df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
-    df = df.sort_values('timestamp')
+        df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
+        df = df.sort_values('timestamp')
 
-    players = {}
-    def random_color():
-        return len(players)
+        players = {}
 
-    def get_top_teams():
-        current_teams = [player["team"] for player in current_timeslot.values()]
-        return dict(itertools.islice(collections.OrderedDict(Counter(current_teams)).items(), 0, 5))
 
-    def get_leaderboard():
-        current_players = {key: player["score"] for key, player in current_timeslot.items()}
-        return dict(itertools.islice(collections.OrderedDict(Counter(current_players)).items(), 0, 5))
+        def random_color():
+            return "%06x" % random.randint(0, 0xFFFFFF)
 
-    current_time_key = None
-    for index, row in df.iterrows():
-        deviceId = row['deviceId']
-        latitude = row['latitude']
-        longitude = row['longitude']
-        timestamp = row['timestamp']
+        def get_top_teams():
+            current_teams = [player["team"] for player in current_timeslot.values()]
+            return dict(itertools.islice(collections.OrderedDict(Counter(current_teams)).items(), 0, 5))
 
-        if deviceId not in players:
-            players[deviceId] = {
-                "team": random_color(),
-                "score": 1
-            }
+        def get_leaderboard():
+            current_players = {key: player["score"] for key, player in current_timeslot.items()}
+            sorted_players = sorted(current_players.items() ,  key=lambda item: item[1], reverse=True) 
+            # print(sorted_players)
+            return dict(itertools.islice(collections.OrderedDict(sorted_players).items(), 0, 5))
 
-        player = players[deviceId]
-        score = player["score"]
-        team = player["team"]
+        def emit_update(): 
+            if buffer > 10:
+                data = {
+                    "time": time_key.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    "positions": current_timeslot,
+                }
 
-        time_key = roundTime(timestamp, roundTo=10)
-        if not current_time_key or time_key > current_time_key:
-            data = {
-                "time": time_key.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                "positions": current_timeslot,
-            }
-
-            if round % 10 == 1:
                 data["teams"] = get_top_teams()
                 data["leaderboard"] = get_leaderboard()
 
-            print('{0} - sending: {1}'.format(datetime.now(), json.dumps(data)))
+                #print('{0} - sending: {1}'.format(datetime.now(), json.dumps(data)))
 
-            if data != {}:
-                socketio.emit('FromAPI', {'data': data})
+                if data != {}:
+                    socketio.emit('FromAPI', {'data': data})
+                # buffer = 0
+        
+        current_time_key = None
+        for index, row in df.iterrows():
+            deviceId = row['deviceId']
+            latitude = row['latitude']
+            longitude = row['longitude']
+            timestamp = row['timestamp']
 
-            round += 1
+            if deviceId not in players:
+                players[deviceId] = {
+                    "team": random_color(),
+                    "score": 1, 
+                    "met": {}
+                }
 
-            current_time_key = time_key
+            player = players[deviceId]
+            score = player["score"]
+            team = player["team"]
+            met = player["met"]
 
-        if deviceId not in current_timeslot:
-            current_timeslot[deviceId] = {
-                "score": score,
-                "team": team
-            }
 
-        for key, player in current_timeslot.items():
-            if key != deviceId:
-                distance = geopy.distance.distance((latitude, longitude), (player["latitude"], player["longitude"])).m
+            time_key = roundTime(timestamp, roundTo=1)
+            emit_update()
 
-                if distance < meeting_threshold and player["team"] != team:
-                    current_timeslot[deviceId]["score"] += 1
-                    current_timeslot[key]["score"] += 1
+            if not current_time_key or time_key > current_time_key:
+                # emit_update()
+                round += 1
+                current_time_key = time_key
 
-                    if current_timeslot[deviceId]["score"] > current_timeslot[key]["score"]:
-                        current_timeslot[key]["team"] = current_timeslot[deviceId]["team"]
-                    elif current_timeslot[deviceId]["score"] < current_timeslot[key]["score"]:
-                        current_timeslot[deviceId]["team"] = current_timeslot[key]["team"]
+            if deviceId not in current_timeslot:
+                current_timeslot[deviceId] = {
+                    "score": score,
+                    "team": team
+                }
 
-        current_timeslot[deviceId]["latitude"] = latitude
-        current_timeslot[deviceId]["longitude"] = longitude
+            for key, player in current_timeslot.items():
+                if key != deviceId:
+                    # met[key] = True
+                    distance = geopy.distance.distance((latitude, longitude), (player["latitude"], player["longitude"])).m
+
+                    if distance < meeting_threshold and player["team"] != team:
+                        current_timeslot[deviceId]["score"] += 1
+                        current_timeslot[key]["score"] += 1
+
+                        if current_timeslot[deviceId]["score"] > current_timeslot[key]["score"]:
+                            current_timeslot[key]["team"] = current_timeslot[deviceId]["team"]
+                        elif current_timeslot[deviceId]["score"] < current_timeslot[key]["score"]:
+                            current_timeslot[deviceId]["team"] = current_timeslot[key]["team"]
+                buffer += (buffer % 10) + 1
+
+
+            current_timeslot[deviceId]["latitude"] = latitude
+            current_timeslot[deviceId]["longitude"] = longitude
 
 
 if __name__ == '__main__':
