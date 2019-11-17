@@ -8,4 +8,4 @@ Once you have these:
 
 > Unfortunately we were too tired to finish the Docker implementation, but feel free to make a pull request!
 # How to create required json files
-*TODO*
+See the [readme](/backend/README.md) in the backend directory.
